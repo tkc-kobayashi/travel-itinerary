@@ -1,42 +1,54 @@
-import { useState } from 'react'
+/**
+ * TripList コンポーネント（旅行一覧画面 / トップ画面）
+ *
+ * Firestore から旅行データをリアルタイムで取得して一覧表示する。
+ * 誰かが旅行を追加・変更すると、このページも自動的に更新される。
+ */
+import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { subscribeTrips } from '../utils/storage'
+import Header from './Header'
+import TravelCard from './TravelCard'
+import Loading from './Loading'
 
-function formatDateRange(startDate, endDate) {
-  const fmt = (d) =>
-    new Date(d).toLocaleDateString('ja-JP', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
+export default function TripList() {
+  const navigate = useNavigate()
+
+  /**
+   * [useState が必要な理由：旅行リストと読み込み状態の管理]
+   *
+   * trips   → Firestore からデータが届くたびに更新され、カードを再描画する
+   * loading → データ取得中はスピナーを表示し、届いたら非表示にする
+   */
+  const [trips,   setTrips]   = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    /**
+     * subscribeTrips はリアルタイム購読を開始する。
+     * Firestore のデータが変わるたびに setTrips が呼ばれ、画面が自動更新される。
+     * useEffect の返り値に unsubscribe を渡すと、
+     * ページを離れたときに自動でリスナーが解除される。
+     */
+    const unsubscribe = subscribeTrips((data) => {
+      setTrips(data)
+      setLoading(false)
     })
-  return `${fmt(startDate)} 〜 ${fmt(endDate)}`
-}
-
-function calcNights(startDate, endDate) {
-  const diff = new Date(endDate) - new Date(startDate)
-  const nights = Math.round(diff / (1000 * 60 * 60 * 24))
-  if (nights <= 0) return '日帰り'
-  return `${nights}泊${nights + 1}日`
-}
-
-export default function TripList({ onCreateNew }) {
-  const [trips] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem('trips') || '[]')
-    } catch {
-      return []
-    }
-  })
+    return unsubscribe // コンポーネントが消えたら購読を解除
+  }, []) // [] = マウント時に一度だけ実行
 
   return (
     <div className="max-w-lg mx-auto px-4 pb-10">
-      {/* ヘッダー */}
-      <div className="bg-gradient-to-br from-orange-400 to-amber-500 -mx-4 px-6 pt-10 pb-8 mb-6 shadow-md">
-        <p className="text-orange-100 text-sm font-medium tracking-wide mb-1">TRAVEL ITINERARY</p>
-        <h1 className="text-white text-3xl font-bold">家族のしおり</h1>
-        <p className="text-orange-100 text-sm mt-1">思い出の旅をまとめよう</p>
-      </div>
+      <Header
+        eyebrow="TRAVEL ITINERARY"
+        title="家族のしおり"
+        subtitle="思い出の旅をまとめよう"
+      />
 
-      {/* 旅行一覧 */}
-      {trips.length === 0 ? (
+      {/* データ取得中はスピナーを表示 */}
+      {loading ? (
+        <Loading />
+      ) : trips.length === 0 ? (
         <div className="text-center py-16">
           <div className="text-6xl mb-4">✈️</div>
           <p className="text-gray-500 text-lg font-medium">旅行がまだありません</p>
@@ -45,39 +57,15 @@ export default function TripList({ onCreateNew }) {
       ) : (
         <div className="space-y-4">
           {trips.map((trip) => (
-            <div
-              key={trip.id}
-              className="bg-white rounded-2xl shadow-sm border border-amber-100 p-5 hover:shadow-md transition-shadow cursor-pointer"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex-1 min-w-0">
-                  <h2 className="text-gray-800 font-bold text-lg leading-tight truncate">
-                    {trip.title}
-                  </h2>
-                  <div className="flex items-center gap-1.5 mt-1.5">
-                    <span className="text-orange-400 text-sm">📍</span>
-                    <span className="text-gray-600 text-sm font-medium">{trip.destination}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 mt-1">
-                    <span className="text-orange-400 text-sm">📅</span>
-                    <span className="text-gray-500 text-sm">
-                      {formatDateRange(trip.startDate, trip.endDate)}
-                    </span>
-                  </div>
-                </div>
-                <span className="shrink-0 bg-orange-50 text-orange-500 text-xs font-bold px-3 py-1 rounded-full border border-orange-200">
-                  {calcNights(trip.startDate, trip.endDate)}
-                </span>
-              </div>
-            </div>
+            <TravelCard key={trip.id} trip={trip} />
           ))}
         </div>
       )}
 
-      {/* 新規作成ボタン */}
+      {/* 右下の固定「＋」ボタン */}
       <button
-        onClick={onCreateNew}
-        className="fixed bottom-6 right-6 bg-orange-400 hover:bg-orange-500 active:bg-orange-600 text-white font-bold text-lg w-14 h-14 rounded-full shadow-lg transition-colors flex items-center justify-center"
+        onClick={() => navigate('/create')}
+        className="fixed bottom-6 right-6 bg-sky-400 hover:bg-sky-500 active:bg-sky-600 text-white font-bold text-lg w-14 h-14 rounded-full shadow-lg transition-colors flex items-center justify-center"
         aria-label="旅行を追加"
       >
         ＋

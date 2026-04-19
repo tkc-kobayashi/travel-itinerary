@@ -1,21 +1,29 @@
-import { useState } from 'react'
+/**
+ * App コンポーネント
+ *
+ * React Router でアプリ全体のルーティングを管理する。
+ * 画面遷移は URL ベースで行い、各ページをコンポーネントに対応させる。
+ *
+ *   /          → 旅行一覧（TripList）
+ *   /create    → 旅行作成（CreateTrip）
+ *   /trip/:id  → 旅行詳細（TripDetail）
+ */
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import TripList from './components/TripList'
 import CreateTrip from './components/CreateTrip'
+import TripDetail from './components/TripDetail'
 import './App.css'
 
-function App() {
-  const [screen, setScreen] = useState('list') // 'list' | 'create'
-
+export default function App() {
   return (
-    <div className="min-h-screen bg-amber-50">
-      {screen === 'list' && (
-        <TripList onCreateNew={() => setScreen('create')} />
-      )}
-      {screen === 'create' && (
-        <CreateTrip onBack={() => setScreen('list')} />
-      )}
-    </div>
+    <BrowserRouter>
+      <div className="min-h-screen bg-sky-50">
+        <Routes>
+          <Route path="/"          element={<TripList />} />
+          <Route path="/create"    element={<CreateTrip />} />
+          <Route path="/trip/:id"  element={<TripDetail />} />
+        </Routes>
+      </div>
+    </BrowserRouter>
   )
 }
-
-export default App

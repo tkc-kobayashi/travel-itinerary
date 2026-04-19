@@ -1,7 +1,7 @@
 # 旅行しおりアプリ TODO
 
 ## Week 1
-- [ ] Day1: トップ画面・旅行作成フォーム
+- [X] Day1: トップ画面・旅行作成フォーム
 - [ ] Day2: コンポーネント分割・useState理解
 - [ ] Day3: localStorageでデータ保存
 - [ ] Day4: 旅行一覧表示・props理解
